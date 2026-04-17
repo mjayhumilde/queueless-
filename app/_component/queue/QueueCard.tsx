@@ -13,7 +13,10 @@ export default function QueueCard({ queueId, queue }: Props) {
     (item: any) => item.number > queue.current,
   ).length;
 
+  const hasWaiting = waitingCount > 0;
+
   const callNext = async () => {
+    if (!hasWaiting) return;
     const queueRef = ref(db, `queues/${queueId}`);
     const snap = await get(queueRef);
     if (!snap.exists()) return;
@@ -47,7 +50,12 @@ export default function QueueCard({ queueId, queue }: Props) {
         </Button>
       </div>
       <div className="flex gap-2 flex-wrap">
-        <Button onClick={callNext} variant="success" size="sm">
+        <Button
+          onClick={callNext}
+          variant="success"
+          size="sm"
+          disabled={!hasWaiting}
+        >
           Call Next
         </Button>
         <Button onClick={copyJoinLink} variant="ghost" size="sm">

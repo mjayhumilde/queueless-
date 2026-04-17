@@ -4,6 +4,7 @@ type Props = {
   variant?: "primary" | "danger" | "ghost" | "success" | "secondary";
   size?: "sm" | "md";
   className?: string;
+  disabled?: boolean;
 };
 
 const variants = {
@@ -25,11 +26,14 @@ export default function Button({
   variant = "primary",
   size = "md",
   className = "",
+  disabled = false,
 }: Props) {
   return (
     <button
       onClick={onClick}
-      className={`rounded ${variants[variant]} ${sizes[size]} ${className}`}
+      disabled={disabled}
+      className={`rounded ${variants[variant]} ${sizes[size]} ${className} 
+        disabled:opacity-40 disabled:cursor-not-allowed`}
     >
       {children}
     </button>
