@@ -9,18 +9,24 @@ type Props = {
 };
 
 export default function QueueCard({ queueId, queue }: Props) {
-  const waitingCount = Object.values(queue.list ?? {}).filter(
+  const waitingList = Object.values(queue.list ?? {}).filter(
     (item: any) => item.number > queue.current,
-  ).length;
+  ) as any[];
 
+  const waitingCount = waitingList.length;
   const hasWaiting = waitingCount > 0;
+
+  // Get the actual next number in line, not just current + 1
+  const nextNumber = hasWaiting
+    ? Math.min(...waitingList.map((item) => item.number))
+    : null;
 
   const callNext = async () => {
     if (!hasWaiting) return;
     const queueRef = ref(db, `queues/${queueId}`);
     const snap = await get(queueRef);
     if (!snap.exists()) return;
-    await update(queueRef, { current: snap.val().current + 1 });
+    await update(queueRef, { current: nextNumber });
   };
 
   const deleteQueue = async () => {
@@ -43,6 +49,9 @@ export default function QueueCard({ queueId, queue }: Props) {
           <p className="text-sm text-gray-500">
             Serving: <strong>{queue.current}</strong> · Waiting:{" "}
             <strong>{waitingCount}</strong>
+          </p>
+          <p className="text-sm text-gray-400 mt-0.5">
+            Next: <strong>{hasWaiting ? nextNumber : "—"}</strong>
           </p>
         </div>
         <Button onClick={deleteQueue} variant="danger" size="sm">
