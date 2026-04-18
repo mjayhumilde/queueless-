@@ -1,6 +1,6 @@
 "use client";
 import { db } from "@/lib/firebase";
-import { ref, get, update, remove } from "firebase/database";
+import { ref, get, update, remove, set } from "firebase/database";
 import Button from "../ui/Button";
 
 type Props = {
@@ -9,29 +9,71 @@ type Props = {
 };
 
 export default function QueueCard({ queueId, queue }: Props) {
-  const waitingList = Object.values(queue.list ?? {}).filter(
-    (item: any) => item.number > queue.current,
-  ) as any[];
+  const waitingList = (Object.values(queue.list ?? {}) as any[])
+    .filter((item) => item.number > queue.current)
+    .sort((a, b) => a.number - b.number);
 
   const waitingCount = waitingList.length;
   const hasWaiting = waitingCount > 0;
+  const nextNumber = hasWaiting ? waitingList[0].number : null;
 
-  // Get the actual next number in line, not just current + 1
-  const nextNumber = hasWaiting
-    ? Math.min(...waitingList.map((item) => item.number))
-    : null;
-
+  // Advance to next && mark current as done
   const callNext = async () => {
     if (!hasWaiting) return;
     const queueRef = ref(db, `queues/${queueId}`);
     const snap = await get(queueRef);
     if (!snap.exists()) return;
+    const data = snap.val();
+
+    // Mark current user = done
+    const currentEntry = Object.entries(data.list ?? {}).find(
+      ([, v]: any) => v.number === data.current,
+    );
+    if (currentEntry) {
+      await update(ref(db, `queues/${queueId}/list/${currentEntry[0]}`), {
+        status: "done",
+      });
+    }
+    await update(queueRef, { current: nextNumber });
+  };
+
+  // Skip current, mark as skipped, advance to next
+  const skipCurrent = async () => {
+    if (!hasWaiting) return;
+    if (!confirm("Skip current person?")) return;
+    const queueRef = ref(db, `queues/${queueId}`);
+    const snap = await get(queueRef);
+    if (!snap.exists()) return;
+    const data = snap.val();
+
+    const currentEntry = Object.entries(data.list ?? {}).find(
+      ([, v]: any) => v.number === data.current,
+    );
+    if (currentEntry) {
+      await update(ref(db, `queues/${queueId}/list/${currentEntry[0]}`), {
+        status: "skipped",
+      });
+    }
     await update(queueRef, { current: nextNumber });
   };
 
   const deleteQueue = async () => {
     if (!confirm("Delete this queue?")) return;
     await remove(ref(db, `queues/${queueId}`));
+  };
+
+  const resetQueue = async () => {
+    if (!confirm("Reset queue? This clears all entries and starts from 0."))
+      return;
+    await set(ref(db, `queues/${queueId}`), {
+      name: queue.name,
+      ownerId: queue.ownerId,
+      ownerName: queue.ownerName,
+      current: 0,
+      isActive: true,
+      createdAt: queue.createdAt,
+      list: {},
+    });
   };
 
   const copyJoinLink = () => {
@@ -47,18 +89,26 @@ export default function QueueCard({ queueId, queue }: Props) {
         <div>
           <p className="font-bold">{queue.name}</p>
           <p className="text-sm text-gray-500">
-            Serving: <strong>{queue.current}</strong> · Waiting:{" "}
-            <strong>{waitingCount}</strong>
+            Serving:{" "}
+            <strong>{queue.current === 0 ? "—" : queue.current}</strong>
+            {" · "}
+            Waiting: <strong>{waitingCount}</strong>
           </p>
           <p className="text-sm text-gray-400 mt-0.5">
-            Next: <strong>{hasWaiting ? nextNumber : "—"}</strong>
+            Next: <strong>{nextNumber ?? "—"}</strong>
           </p>
         </div>
-        <Button onClick={deleteQueue} variant="danger" size="sm">
-          Delete
-        </Button>
+        <div className="flex flex-col gap-1 items-end">
+          <Button onClick={deleteQueue} variant="danger" size="sm">
+            Delete
+          </Button>
+          <Button onClick={resetQueue} variant="ghost" size="sm">
+            Reset
+          </Button>
+        </div>
       </div>
-      <div className="flex gap-2 flex-wrap">
+
+      <div className="flex gap-2 flex-wrap mt-3">
         <Button
           onClick={callNext}
           variant="success"
@@ -66,6 +116,14 @@ export default function QueueCard({ queueId, queue }: Props) {
           disabled={!hasWaiting}
         >
           Call Next
+        </Button>
+        <Button
+          onClick={skipCurrent}
+          variant="ghost"
+          size="sm"
+          disabled={!hasWaiting}
+        >
+          Skip
         </Button>
         <Button onClick={copyJoinLink} variant="ghost" size="sm">
           Copy Join Link
