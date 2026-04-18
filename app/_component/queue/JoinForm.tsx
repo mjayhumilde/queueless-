@@ -1,7 +1,7 @@
 "use client";
 import { useState } from "react";
 import { db } from "@/lib/firebase";
-import { ref, get, push, set } from "firebase/database";
+import { ref, get, push, set, runTransaction } from "firebase/database";
 import { User } from "firebase/auth";
 import Input from "../ui/input";
 import Button from "../ui/Button";
@@ -47,19 +47,32 @@ export default function JoinForm({ user }: { user: User }) {
       return;
     }
 
-    const list = queueData.list ?? {};
-    const nextNumber = Object.keys(list).length + 1;
+    // Ensures no two users get the same number
+    let assignedNumber = 0;
+    await runTransaction(ref(db, `queues/${queueId}/list`), (list) => {
+      const entries = Object.values(list ?? {}) as any[];
+      const maxNumber = entries.reduce(
+        (max, item) => Math.max(max, item.number ?? 0),
+        0,
+      );
+      assignedNumber = maxNumber + 1;
+      return list;
+    });
 
     const entryRef = push(ref(db, `queues/${queueId}/list`));
     await set(entryRef, {
       name: user.displayName,
       uid: user.uid,
-      number: nextNumber,
+      number: assignedNumber,
       status: "waiting",
       joinedAt: Date.now(),
     });
 
-    await set(ref(db, `users/${user.uid}/joinedQueues/${queueId}`), nextNumber);
+    await set(
+      ref(db, `users/${user.uid}/joinedQueues/${queueId}`),
+      assignedNumber,
+    );
+
     setJoinLink("");
   };
 
