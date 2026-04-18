@@ -9,9 +9,11 @@ import Button from "../ui/Button";
 export default function JoinForm({ user }: { user: User }) {
   const [joinLink, setJoinLink] = useState("");
   const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
 
   const joinViaLink = async () => {
     setError("");
+    setSuccess("");
     if (!joinLink.trim()) return;
 
     let queueId = joinLink.trim();
@@ -47,7 +49,6 @@ export default function JoinForm({ user }: { user: User }) {
       return;
     }
 
-    // Ensures no two users get the same number
     let assignedNumber = 0;
     await runTransaction(ref(db, `queues/${queueId}/list`), (list) => {
       const entries = Object.values(list ?? {}) as any[];
@@ -72,8 +73,8 @@ export default function JoinForm({ user }: { user: User }) {
       ref(db, `users/${user.uid}/joinedQueues/${queueId}`),
       assignedNumber,
     );
-
     setJoinLink("");
+    setSuccess(`Joined! Your number is ${assignedNumber}.`);
   };
 
   return (
@@ -84,6 +85,7 @@ export default function JoinForm({ user }: { user: User }) {
           onChange={(v) => {
             setJoinLink(v);
             setError("");
+            setSuccess("");
           }}
           placeholder="Paste join link or queue ID"
           onEnter={joinViaLink}
@@ -92,7 +94,8 @@ export default function JoinForm({ user }: { user: User }) {
           Join
         </Button>
       </div>
-      {error && <p className="text-red-500 text-sm mt-1">{error}</p>}
+      {error && <p className="text-red-600 text-sm mt-1">{error}</p>}
+      {success && <p className="text-green-700 text-sm mt-1">{success}</p>}
     </div>
   );
 }

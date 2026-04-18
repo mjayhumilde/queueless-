@@ -8,11 +8,14 @@ type Props = {
 };
 
 const variants = {
-  primary: "bg-blue-500 text-white hover:bg-blue-600",
-  success: "bg-green-500 text-white hover:bg-green-600",
-  danger: "text-red-400 underline hover:text-red-600",
-  ghost: "bg-gray-600 text-white hover:bg-gray-700",
-  secondary: "bg-purple-500 text-white hover:bg-purple-600",
+  primary:
+    "bg-brand-tertiary text-brand-complementary hover:bg-brand-secondary",
+  success: "bg-brand-complementary text-brand-main hover:opacity-90",
+  danger: "text-red-600 underline hover:text-red-800",
+  ghost:
+    "border border-brand-complementary text-brand-complementary hover:bg-brand-secondary",
+  secondary:
+    "bg-brand-secondary text-brand-complementary hover:bg-brand-tertiary",
 };
 
 const sizes = {
@@ -32,7 +35,7 @@ export default function Button({
     <button
       onClick={onClick}
       disabled={disabled}
-      className={`rounded ${variants[variant]} ${sizes[size]} ${className} 
+      className={`rounded font-medium transition-colors ${variants[variant]} ${sizes[size]} ${className}
         disabled:opacity-40 disabled:cursor-not-allowed`}
     >
       {children}

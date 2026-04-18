@@ -3,10 +3,7 @@ import { db } from "@/lib/firebase";
 import { ref, get, update, remove, set } from "firebase/database";
 import Button from "../ui/Button";
 
-type Props = {
-  queueId: string;
-  queue: any;
-};
+type Props = { queueId: string; queue: any };
 
 export default function QueueCard({ queueId, queue }: Props) {
   const waitingList = (Object.values(queue.list ?? {}) as any[])
@@ -17,15 +14,12 @@ export default function QueueCard({ queueId, queue }: Props) {
   const hasWaiting = waitingCount > 0;
   const nextNumber = hasWaiting ? waitingList[0].number : null;
 
-  // Advance to next && mark current as done
   const callNext = async () => {
     if (!hasWaiting) return;
     const queueRef = ref(db, `queues/${queueId}`);
     const snap = await get(queueRef);
     if (!snap.exists()) return;
     const data = snap.val();
-
-    // Mark current user = done
     const currentEntry = Object.entries(data.list ?? {}).find(
       ([, v]: any) => v.number === data.current,
     );
@@ -37,7 +31,6 @@ export default function QueueCard({ queueId, queue }: Props) {
     await update(queueRef, { current: nextNumber });
   };
 
-  // Skip current, mark as skipped, advance to next
   const skipCurrent = async () => {
     if (!hasWaiting) return;
     if (!confirm("Skip current person?")) return;
@@ -45,7 +38,6 @@ export default function QueueCard({ queueId, queue }: Props) {
     const snap = await get(queueRef);
     if (!snap.exists()) return;
     const data = snap.val();
-
     const currentEntry = Object.entries(data.list ?? {}).find(
       ([, v]: any) => v.number === data.current,
     );
@@ -84,19 +76,23 @@ export default function QueueCard({ queueId, queue }: Props) {
   };
 
   return (
-    <div className="border rounded p-4 mb-3">
-      <div className="flex justify-between items-start mb-2">
+    <div className="bg-white border border-brand-complementary/20 rounded-xl p-4 mb-3 shadow-sm">
+      <div className="flex justify-between items-start mb-3">
         <div>
-          <p className="font-bold">{queue.name}</p>
-          <p className="text-sm text-gray-500">
-            Serving:{" "}
-            <strong>{queue.current === 0 ? "—" : queue.current}</strong>
-            {" · "}
-            Waiting: <strong>{waitingCount}</strong>
+          <p className="font-bold text-brand-complementary text-base">
+            {queue.name}
           </p>
-          <p className="text-sm text-gray-400 mt-0.5">
-            Next: <strong>{nextNumber ?? "—"}</strong>
-          </p>
+          <div className="flex gap-3 mt-1">
+            <span className="text-xs bg-brand-secondary text-brand-complementary px-2 py-0.5 rounded-full font-medium">
+              Serving: {queue.current === 0 ? "—" : queue.current}
+            </span>
+            <span className="text-xs bg-brand-main text-brand-complementary px-2 py-0.5 rounded-full font-medium border border-brand-complementary/20">
+              Waiting: {waitingCount}
+            </span>
+            <span className="text-xs bg-brand-main text-brand-complementary px-2 py-0.5 rounded-full font-medium border border-brand-complementary/20">
+              Next: {nextNumber ?? "—"}
+            </span>
+          </div>
         </div>
         <div className="flex flex-col gap-1 items-end">
           <Button onClick={deleteQueue} variant="danger" size="sm">
@@ -108,7 +104,7 @@ export default function QueueCard({ queueId, queue }: Props) {
         </div>
       </div>
 
-      <div className="flex gap-2 flex-wrap mt-3">
+      <div className="flex gap-2 flex-wrap pt-3 border-t border-brand-complementary/10">
         <Button
           onClick={callNext}
           variant="success"
@@ -126,7 +122,7 @@ export default function QueueCard({ queueId, queue }: Props) {
           Skip
         </Button>
         <Button onClick={copyJoinLink} variant="ghost" size="sm">
-          Copy Join Link
+          Copy Link
         </Button>
         <Button
           onClick={() => window.open(`/monitor?queueId=${queueId}`, "_blank")}

@@ -19,46 +19,50 @@ export default function MonitorPage() {
   if (!queueId) return <p>Missing ?queueId= in URL</p>;
   if (!queue) return <p>Loading...</p>;
 
-  const waitingList = (Object.values(queue.list ?? {}) as any[]).filter(
-    (item) => item.number > queue.current,
-  );
+  const waitingList = (Object.values(queue.list ?? {}) as any[])
+    .filter((item) => item.number > queue.current)
+    .sort((a, b) => a.number - b.number);
 
-  const nextNumber =
-    waitingList.length > 0
-      ? Math.min(...waitingList.map((item) => item.number))
-      : null;
+  const nextNumber = waitingList.length > 0 ? waitingList[0].number : null;
 
   return (
-    <div className="h-screen bg-black text-white flex flex-col items-center justify-center">
-      <h2 className="text-2xl mb-1">{queue.name}</h2>
+    <div className="h-screen bg-brand-complementary text-brand-main flex flex-col items-center justify-center px-6">
+      <p className="text-brand-secondary text-sm uppercase tracking-widest mb-1">
+        {queue.name}
+      </p>
 
-      <p className="text-4xl uppercase tracking-widest text-gray-400 mb-2">
+      <p className="text-xs uppercase tracking-widest text-brand-secondary/60 mt-8 mb-2">
         Now Serving
       </p>
-      <p className="text-8xl font-bold">
+      <p className="text-9xl font-bold text-brand-main">
         {queue.current === 0 ? "—" : queue.current}
       </p>
 
-      <p className="text-3xl uppercase tracking-widest text-gray-400 mt-10 mb-2">
+      <p className="text-xs uppercase tracking-widest text-brand-secondary/60 mt-10 mb-2">
         Next
       </p>
-      <p className="text-6xl font-bold">{nextNumber ?? "—"}</p>
+      <p className="text-6xl font-bold text-brand-secondary">
+        {nextNumber ?? "—"}
+      </p>
 
-      <div className="mt-10 text-center">
-        <p className="text-2xl uppercase tracking-widest text-gray-400 mb-3">
+      <div className="mt-12 text-center w-full max-w-xs">
+        <p className="text-xs uppercase tracking-widest text-brand-secondary/60 mb-4">
           Waiting ({waitingList.length})
         </p>
         {waitingList.length === 0 ? (
-          <p className="text-gray-500 text-2xl">No one in queue</p>
+          <p className="text-brand-secondary/50 text-lg">No one in queue</p>
         ) : (
-          waitingList
-            .sort((a, b) => a.number - b.number)
-            .slice(0, 5)
-            .map((item) => (
-              <p key={item.number} className="text-xl">
-                {item.number} — {item.name}
-              </p>
-            ))
+          waitingList.slice(0, 5).map((item) => (
+            <div
+              key={item.number}
+              className="flex justify-between items-center py-2 border-b border-brand-secondary/20"
+            >
+              <span className="text-brand-secondary/70 text-sm">
+                {item.name}
+              </span>
+              <span className="text-brand-main font-bold">{item.number}</span>
+            </div>
+          ))
         )}
       </div>
     </div>

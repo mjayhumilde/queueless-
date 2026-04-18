@@ -23,7 +23,6 @@ export default function JoinPage() {
   const [alreadyJoined, setAlreadyJoined] = useState(false);
   const [joining, setJoining] = useState(false);
 
-  // Load queue info real-time
   useEffect(() => {
     if (!queueId) return;
     return onValue(ref(db, `queues/${queueId}`), (snap) => {
@@ -35,7 +34,6 @@ export default function JoinPage() {
     });
   }, [queueId]);
 
-  // Check user already joined queue
   useEffect(() => {
     if (!user || !queueId) return;
     get(ref(db, `users/${user.uid}/joinedQueues/${queueId}`)).then((snap) => {
@@ -49,9 +47,7 @@ export default function JoinPage() {
   const joinQueue = async () => {
     if (!user || !queueId || joining) return;
     setJoining(true);
-
     try {
-      // Check if user owns this queue
       const qSnap = await get(ref(db, `queues/${queueId}`));
       if (!qSnap.exists()) {
         alert("Queue not found!");
@@ -62,7 +58,6 @@ export default function JoinPage() {
         return;
       }
 
-      // Check already joined
       const alreadySnap = await get(
         ref(db, `users/${user.uid}/joinedQueues/${queueId}`),
       );
@@ -72,7 +67,6 @@ export default function JoinPage() {
         return;
       }
 
-      // Transaction get unique number
       let assignedNumber = 0;
       await runTransaction(ref(db, `queues/${queueId}/list`), (list) => {
         const entries = Object.values(list ?? {}) as any[];
@@ -92,103 +86,115 @@ export default function JoinPage() {
         status: "waiting",
         joinedAt: Date.now(),
       });
-
       await set(
         ref(db, `users/${user.uid}/joinedQueues/${queueId}`),
         assignedNumber,
       );
-
       setQueueNumber(assignedNumber);
     } finally {
       setJoining(false);
     }
   };
 
-  if (loading) return <p className="p-5">Loading...</p>;
-
-  if (!user) {
+  if (loading)
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center gap-4 p-5">
-        <h1 className="text-2xl font-bold">Join Queue</h1>
-        <p className="text-gray-500 text-sm text-center max-w-xs">
-          You need to sign in to join a queue so we can track your spot.
+      <div className="min-h-screen bg-brand-main flex items-center justify-center">
+        <p className="text-brand-complementary">Loading...</p>
+      </div>
+    );
+
+  if (!user)
+    return (
+      <div className="min-h-screen bg-brand-main flex flex-col items-center justify-center gap-5 p-5">
+        <h1 className="text-2xl font-bold text-brand-complementary">
+          Join Queue
+        </h1>
+        <p className="text-brand-complementary/60 text-sm text-center max-w-xs">
+          Sign in to join so we can track your spot.
         </p>
         <button
           onClick={loginWithGoogle}
-          className="bg-blue-500 text-white px-6 py-3 rounded"
+          className="bg-brand-complementary text-brand-main px-8 py-3 rounded-lg font-semibold hover:opacity-90"
         >
           Sign in with Google
         </button>
       </div>
     );
-  }
 
-  if (!queueId || notFound) {
+  if (!queueId || notFound)
     return (
-      <div className="p-5">
-        <p className="text-red-500">
-          Invalid or missing queue link. Ask the queue owner for the join link.
-        </p>
+      <div className="min-h-screen bg-brand-main flex flex-col items-center justify-center gap-3 p-5">
+        <p className="text-red-600">Invalid or missing queue link.</p>
         <button
           onClick={() => router.push("/dashboard")}
-          className="mt-3 underline text-sm"
+          className="text-brand-complementary underline text-sm"
         >
           Go to Dashboard
         </button>
       </div>
     );
-  }
 
-  if (!queueInfo) return <p className="p-5">Loading...</p>;
+  if (!queueInfo)
+    return (
+      <div className="min-h-screen bg-brand-main flex items-center justify-center">
+        <p className="text-brand-complementary">Loading...</p>
+      </div>
+    );
 
   const ahead = queueNumber ? queueNumber - queueInfo.current : 0;
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center p-5">
+    <div className="min-h-screen bg-brand-main flex flex-col items-center justify-center p-5">
       <div className="max-w-sm w-full">
-        <h1 className="text-2xl font-bold mb-1">{queueInfo.name}</h1>
-        <p className="text-gray-500 mb-6 text-sm">
+        <h1 className="text-2xl font-bold text-brand-complementary mb-1">
+          {queueInfo.name}
+        </h1>
+        <p className="text-brand-complementary/50 mb-8 text-sm">
           Now serving:{" "}
           <strong>{queueInfo.current === 0 ? "—" : queueInfo.current}</strong>
         </p>
 
         {queueNumber ? (
-          <div className="text-center py-10 border rounded p-6">
-            <p className="text-gray-500 mb-2 text-sm">Your queue number</p>
-            <p className="text-7xl font-bold">{queueNumber}</p>
-            <p className="mt-4 text-sm">
+          <div className="bg-white border border-brand-complementary/20 rounded-xl p-8 text-center shadow-sm">
+            <p className="text-brand-complementary/50 mb-2 text-sm uppercase tracking-widest">
+              Your number
+            </p>
+            <p className="text-8xl font-bold text-brand-complementary">
+              {queueNumber}
+            </p>
+            <p className="mt-5 text-sm">
               {ahead > 0 ? (
-                <span className="text-yellow-600">
+                <span className="text-brand-tertiary font-medium">
                   {ahead} people ahead of you
                 </span>
               ) : (
-                <span className="text-green-600 font-semibold">
+                <span className="text-green-700 font-semibold">
                   You're up next!
                 </span>
               )}
             </p>
             {alreadyJoined && (
-              <p className="text-xs text-gray-400 mt-2">
-                You already joined this queue.
+              <p className="text-xs text-brand-complementary/30 mt-2">
+                Already joined
               </p>
             )}
             <button
               onClick={() => router.push("/dashboard")}
-              className="mt-6 underline text-sm text-gray-500"
+              className="mt-6 text-sm text-brand-complementary/50 underline"
             >
               Back to Dashboard
             </button>
           </div>
         ) : (
-          <div className="border rounded p-6">
-            <p className="text-sm text-gray-500 mb-4">
+          <div className="bg-white border border-brand-complementary/20 rounded-xl p-6 shadow-sm">
+            <p className="text-sm text-brand-complementary/60 mb-5">
               Joining as <strong>{user.displayName}</strong>
             </p>
             <button
               onClick={joinQueue}
               disabled={joining}
-              className="w-full bg-green-500 text-white py-3 rounded font-semibold
-                disabled:opacity-40 disabled:cursor-not-allowed"
+              className="w-full bg-brand-complementary text-brand-main py-3 rounded-lg font-semibold
+                hover:opacity-90 transition-opacity disabled:opacity-40 disabled:cursor-not-allowed"
             >
               {joining ? "Joining..." : "Join Queue"}
             </button>

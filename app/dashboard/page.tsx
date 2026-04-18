@@ -19,43 +19,60 @@ export default function DashboardPage() {
     if (!loading && !user) router.push("/");
   }, [user, loading]);
 
-  if (loading || !user) return <p className="p-5">Loading...</p>;
+  if (loading || !user)
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-brand-main">
+        <p className="text-brand-complementary">Loading...</p>
+      </div>
+    );
 
   return (
-    <div className="p-5 max-w-xl mx-auto">
-      <section className="mb-10">
-        <h2 className="text-lg font-semibold mb-3">Join a Queue</h2>
-        <JoinForm user={user} />
-      </section>
+    <div className="min-h-screen bg-brand-main">
+      <div className="max-w-xl mx-auto px-5 py-8">
+        <section className="mb-8">
+          <h2 className="text-sm font-semibold uppercase tracking-widest text-brand-tertiary mb-3">
+            Join a Queue
+          </h2>
+          <JoinForm user={user} />
+        </section>
 
-      <section className="mb-10">
-        <h2 className="text-lg font-semibold mb-3">Create a Queue</h2>
-        <CreateForm user={user} />
-      </section>
+        <section className="mb-8">
+          <h2 className="text-sm font-semibold uppercase tracking-widest text-brand-tertiary mb-3">
+            Create a Queue
+          </h2>
+          <CreateForm user={user} />
+        </section>
 
-      <section className="mb-10">
-        <h2 className="text-lg font-semibold mb-3">My Queues</h2>
-        {Object.keys(myQueues).length === 0 ? (
-          <p className="text-gray-400 text-sm">No queues created yet.</p>
-        ) : (
-          Object.entries(myQueues).map(([queueId, queue]) => (
-            <QueueCard key={queueId} queueId={queueId} queue={queue} />
-          ))
-        )}
-      </section>
+        <section className="mb-8">
+          <h2 className="text-sm font-semibold uppercase tracking-widest text-brand-tertiary mb-3">
+            My Queues
+          </h2>
+          {Object.keys(myQueues).length === 0 ? (
+            <p className="text-brand-complementary/50 text-sm">
+              No queues created yet.
+            </p>
+          ) : (
+            Object.entries(myQueues).map(([queueId, queue]) => (
+              <QueueCard key={queueId} queueId={queueId} queue={queue} />
+            ))
+          )}
+        </section>
 
-      <section>
-        <h2 className="text-lg font-semibold mb-3">Queues I Joined</h2>
-        {Object.keys(joinedQueues).length === 0 ? (
-          <p className="text-gray-400 text-sm">
-            You haven't joined any queues yet.
-          </p>
-        ) : (
-          Object.entries(joinedQueues).map(([queueId, queue]) => (
-            <JoinedCard key={queueId} queueId={queueId} queue={queue} />
-          ))
-        )}
-      </section>
+        <section>
+          <h2 className="text-sm font-semibold uppercase tracking-widest text-brand-tertiary mb-3">
+            Queues I Joined
+          </h2>
+          {Object.keys(joinedQueues).length === 0 ? (
+            <p className="text-brand-complementary/50 text-sm">
+              You haven't joined any queues yet.
+            </p>
+          ) : (
+            Object.entries(joinedQueues).map(([queueId, queue]) => (
+              <JoinedCard key={queueId} queueId={queueId} queue={queue} />
+            ))
+          )}
+        </section>
+      </div>
     </div>
   );
 }
