@@ -2,7 +2,14 @@
 import { useState, useEffect } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { db } from "@/lib/firebase";
-import { ref, get, push, set, onValue } from "firebase/database";
+import {
+  ref,
+  get,
+  push,
+  set,
+  onValue,
+  runTransaction,
+} from "firebase/database";
 import { useAuth } from "@/context/authContext";
 
 export default function JoinPage() {
@@ -14,6 +21,7 @@ export default function JoinPage() {
   const [queueNumber, setQueueNumber] = useState<number | null>(null);
   const [notFound, setNotFound] = useState(false);
   const [alreadyJoined, setAlreadyJoined] = useState(false);
+  const [joining, setJoining] = useState(false);
 
   // Load queue info real-time
   useEffect(() => {
@@ -39,35 +47,65 @@ export default function JoinPage() {
   }, [user, queueId]);
 
   const joinQueue = async () => {
-    if (!user || !queueId) return;
-    const snap = await get(ref(db, `queues/${queueId}`));
-    if (!snap.exists()) {
-      alert("Queue not found!");
-      return;
+    if (!user || !queueId || joining) return;
+    setJoining(true);
+
+    try {
+      // Check if user owns this queue
+      const qSnap = await get(ref(db, `queues/${queueId}`));
+      if (!qSnap.exists()) {
+        alert("Queue not found!");
+        return;
+      }
+      if (qSnap.val().ownerId === user.uid) {
+        alert("You can't join your own queue.");
+        return;
+      }
+
+      // Check already joined
+      const alreadySnap = await get(
+        ref(db, `users/${user.uid}/joinedQueues/${queueId}`),
+      );
+      if (alreadySnap.exists()) {
+        setQueueNumber(alreadySnap.val());
+        setAlreadyJoined(true);
+        return;
+      }
+
+      // Transaction get unique number
+      let assignedNumber = 0;
+      await runTransaction(ref(db, `queues/${queueId}/list`), (list) => {
+        const entries = Object.values(list ?? {}) as any[];
+        const maxNumber = entries.reduce(
+          (max, item) => Math.max(max, item.number ?? 0),
+          0,
+        );
+        assignedNumber = maxNumber + 1;
+        return list;
+      });
+
+      const entryRef = push(ref(db, `queues/${queueId}/list`));
+      await set(entryRef, {
+        name: user.displayName,
+        uid: user.uid,
+        number: assignedNumber,
+        status: "waiting",
+        joinedAt: Date.now(),
+      });
+
+      await set(
+        ref(db, `users/${user.uid}/joinedQueues/${queueId}`),
+        assignedNumber,
+      );
+
+      setQueueNumber(assignedNumber);
+    } finally {
+      setJoining(false);
     }
-
-    const data = snap.val();
-    const list = data.list ?? {};
-    const nextNumber = Object.keys(list).length + 1;
-
-    // Save entry in queue list
-    const entryRef = push(ref(db, `queues/${queueId}/list`));
-    await set(entryRef, {
-      name: user.displayName,
-      uid: user.uid,
-      number: nextNumber,
-      status: "waiting",
-      joinedAt: Date.now(),
-    });
-
-    await set(ref(db, `users/${user.uid}/joinedQueues/${queueId}`), nextNumber);
-
-    setQueueNumber(nextNumber);
   };
 
   if (loading) return <p className="p-5">Loading...</p>;
 
-  // Not logged in === inform user
   if (!user) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center gap-4 p-5">
@@ -110,7 +148,8 @@ export default function JoinPage() {
       <div className="max-w-sm w-full">
         <h1 className="text-2xl font-bold mb-1">{queueInfo.name}</h1>
         <p className="text-gray-500 mb-6 text-sm">
-          Now serving: <strong>{queueInfo.current}</strong>
+          Now serving:{" "}
+          <strong>{queueInfo.current === 0 ? "—" : queueInfo.current}</strong>
         </p>
 
         {queueNumber ? (
@@ -147,9 +186,11 @@ export default function JoinPage() {
             </p>
             <button
               onClick={joinQueue}
-              className="w-full bg-green-500 text-white py-3 rounded font-semibold"
+              disabled={joining}
+              className="w-full bg-green-500 text-white py-3 rounded font-semibold
+                disabled:opacity-40 disabled:cursor-not-allowed"
             >
-              Join Queue
+              {joining ? "Joining..." : "Join Queue"}
             </button>
           </div>
         )}
