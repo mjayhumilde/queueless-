@@ -13,13 +13,17 @@ export default function Input({
 }: Props) {
   return (
     <input
-      className="border border-brand-complementary/30 bg-white p-2 flex-1 rounded w-full
-        text-brand-complementary placeholder:text-brand-complementary/40
-        focus:outline-none focus:border-brand-tertiary focus:ring-1 focus:ring-brand-tertiary"
       value={value}
       placeholder={placeholder}
       onChange={(e) => onChange(e.target.value)}
       onKeyDown={(e) => e.key === "Enter" && onEnter?.()}
+      className="
+        flex-1 w-full bg-white border border-brand-complementary/15
+        rounded-xl px-3.5 py-2.5 text-[13px] text-brand-complementary
+        placeholder:text-brand-complementary/30
+        focus:outline-none focus:border-brand-tertiary
+        focus:ring-2 focus:ring-brand-tertiary/20 transition-all
+      "
     />
   );
 }

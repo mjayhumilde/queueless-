@@ -20,32 +20,29 @@ export default function QueueCard({ queueId, queue }: Props) {
     const snap = await get(queueRef);
     if (!snap.exists()) return;
     const data = snap.val();
-    const currentEntry = Object.entries(data.list ?? {}).find(
+    const entry = Object.entries(data.list ?? {}).find(
       ([, v]: any) => v.number === data.current,
     );
-    if (currentEntry) {
-      await update(ref(db, `queues/${queueId}/list/${currentEntry[0]}`), {
+    if (entry)
+      await update(ref(db, `queues/${queueId}/list/${entry[0]}`), {
         status: "done",
       });
-    }
     await update(queueRef, { current: nextNumber });
   };
 
   const skipCurrent = async () => {
-    if (!hasWaiting) return;
-    if (!confirm("Skip current person?")) return;
+    if (!hasWaiting || !confirm("Skip current person?")) return;
     const queueRef = ref(db, `queues/${queueId}`);
     const snap = await get(queueRef);
     if (!snap.exists()) return;
     const data = snap.val();
-    const currentEntry = Object.entries(data.list ?? {}).find(
+    const entry = Object.entries(data.list ?? {}).find(
       ([, v]: any) => v.number === data.current,
     );
-    if (currentEntry) {
-      await update(ref(db, `queues/${queueId}/list/${currentEntry[0]}`), {
+    if (entry)
+      await update(ref(db, `queues/${queueId}/list/${entry[0]}`), {
         status: "skipped",
       });
-    }
     await update(queueRef, { current: nextNumber });
   };
 
@@ -55,8 +52,7 @@ export default function QueueCard({ queueId, queue }: Props) {
   };
 
   const resetQueue = async () => {
-    if (!confirm("Reset queue? This clears all entries and starts from 0."))
-      return;
+    if (!confirm("Reset queue? Clears all entries.")) return;
     await set(ref(db, `queues/${queueId}`), {
       name: queue.name,
       ownerId: queue.ownerId,
@@ -76,38 +72,43 @@ export default function QueueCard({ queueId, queue }: Props) {
   };
 
   return (
-    <div className="bg-white border border-brand-complementary/20 rounded-xl p-4 mb-3 shadow-sm">
+    <div className="bg-white border border-brand-complementary/12 rounded-2xl p-4 mb-3 transition-all hover:border-brand-complementary/20">
+      {/* Top row */}
       <div className="flex justify-between items-start mb-3">
-        <div>
-          <p className="font-bold text-brand-complementary text-base">
-            {queue.name}
-          </p>
-          <div className="flex gap-3 mt-1">
-            <span className="text-xs bg-brand-secondary text-brand-complementary px-2 py-0.5 rounded-full font-medium">
-              Serving: {queue.current === 0 ? "—" : queue.current}
-            </span>
-            <span className="text-xs bg-brand-main text-brand-complementary px-2 py-0.5 rounded-full font-medium border border-brand-complementary/20">
-              Waiting: {waitingCount}
-            </span>
-            <span className="text-xs bg-brand-main text-brand-complementary px-2 py-0.5 rounded-full font-medium border border-brand-complementary/20">
-              Next: {nextNumber ?? "—"}
-            </span>
-          </div>
-        </div>
-        <div className="flex flex-col gap-1 items-end">
+        <p className="font-extrabold text-brand-complementary text-[13px]">
+          {queue.name}
+        </p>
+        <div className="flex gap-1.5">
+          <Button onClick={resetQueue} variant="outline" size="sm">
+            Reset
+          </Button>
           <Button onClick={deleteQueue} variant="danger" size="sm">
             Delete
-          </Button>
-          <Button onClick={resetQueue} variant="ghost" size="sm">
-            Reset
           </Button>
         </div>
       </div>
 
-      <div className="flex gap-2 flex-wrap pt-3 border-t border-brand-complementary/10">
+      {/* Stat pills */}
+      <div className="flex gap-1.5 flex-wrap mb-3">
+        <span className="text-[11px] font-bold px-2.5 py-1 rounded-full bg-brand-secondary text-brand-complementary">
+          Serving: {queue.current === 0 ? "—" : queue.current}
+        </span>
+        <span className="text-[11px] font-bold px-2.5 py-1 rounded-full bg-brand-complementary/6 text-brand-complementary border border-brand-complementary/12">
+          Waiting: {waitingCount}
+        </span>
+        <span className="text-[11px] font-bold px-2.5 py-1 rounded-full bg-brand-complementary/6 text-brand-complementary border border-brand-complementary/12">
+          Next: {nextNumber ?? "—"}
+        </span>
+      </div>
+
+      {/* Divider */}
+      <div className="border-t border-brand-complementary/8 mb-3" />
+
+      {/* Actions */}
+      <div className="flex gap-1.5 flex-wrap">
         <Button
           onClick={callNext}
-          variant="success"
+          variant="primary"
           size="sm"
           disabled={!hasWaiting}
         >
@@ -126,7 +127,7 @@ export default function QueueCard({ queueId, queue }: Props) {
         </Button>
         <Button
           onClick={() => window.open(`/monitor?queueId=${queueId}`, "_blank")}
-          variant="secondary"
+          variant="monitor"
           size="sm"
         >
           Monitor

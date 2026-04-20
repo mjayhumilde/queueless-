@@ -57,24 +57,22 @@ export default function JoinPage() {
         alert("You can't join your own queue.");
         return;
       }
-
-      const alreadySnap = await get(
+      const already = await get(
         ref(db, `users/${user.uid}/joinedQueues/${queueId}`),
       );
-      if (alreadySnap.exists()) {
-        setQueueNumber(alreadySnap.val());
+      if (already.exists()) {
+        setQueueNumber(already.val());
         setAlreadyJoined(true);
         return;
       }
 
       let assignedNumber = 0;
       await runTransaction(ref(db, `queues/${queueId}/list`), (list) => {
-        const entries = Object.values(list ?? {}) as any[];
-        const maxNumber = entries.reduce(
-          (max, item) => Math.max(max, item.number ?? 0),
+        const max = Object.values(list ?? {}).reduce(
+          (m: number, i: any) => Math.max(m, i.number ?? 0),
           0,
         );
-        assignedNumber = maxNumber + 1;
+        assignedNumber = (max as number) + 1;
         return list;
       });
 
@@ -96,111 +94,144 @@ export default function JoinPage() {
     }
   };
 
+  const Shell = ({ children }: { children: React.ReactNode }) => (
+    <div className="min-h-screen bg-brand-main flex flex-col items-center justify-center px-6 py-12">
+      <div className="w-full max-w-sm">{children}</div>
+    </div>
+  );
+
   if (loading)
     return (
-      <div className="min-h-screen bg-brand-main flex items-center justify-center">
-        <p className="text-brand-complementary">Loading...</p>
-      </div>
+      <Shell>
+        <p className="text-center text-brand-complementary/40 text-sm">
+          Loading...
+        </p>
+      </Shell>
     );
 
   if (!user)
     return (
-      <div className="min-h-screen bg-brand-main flex flex-col items-center justify-center gap-5 p-5">
-        <h1 className="text-2xl font-bold text-brand-complementary">
-          Join Queue
-        </h1>
-        <p className="text-brand-complementary/60 text-sm text-center max-w-xs">
-          Sign in to join so we can track your spot.
-        </p>
-        <button
-          onClick={loginWithGoogle}
-          className="bg-brand-complementary text-brand-main px-8 py-3 rounded-lg font-semibold hover:opacity-90"
-        >
-          Sign in with Google
-        </button>
-      </div>
+      <Shell>
+        <div className="bg-white border border-brand-complementary/12 rounded-2xl p-7 text-center">
+          <p className="text-[10px] font-bold uppercase tracking-widest text-brand-complementary/40 mb-2">
+            Join Queue
+          </p>
+          <h2 className="text-xl font-extrabold text-brand-complementary mb-2">
+            Sign in to continue
+          </h2>
+          <p className="text-[12px] text-brand-complementary/50 mb-6 leading-relaxed">
+            We need to know who you are to track your spot in line.
+          </p>
+          <button
+            onClick={loginWithGoogle}
+            className="w-full flex items-center justify-center gap-3 bg-brand-complementary
+            text-brand-main font-bold text-[13px] py-3.5 rounded-xl hover:opacity-90 transition-all"
+          >
+            <div className="w-5 h-5 rounded-full bg-white flex items-center justify-center text-[10px] font-black text-brand-complementary">
+              G
+            </div>
+            Continue with Google
+          </button>
+        </div>
+      </Shell>
     );
 
   if (!queueId || notFound)
     return (
-      <div className="min-h-screen bg-brand-main flex flex-col items-center justify-center gap-3 p-5">
-        <p className="text-red-600">Invalid or missing queue link.</p>
-        <button
-          onClick={() => router.push("/dashboard")}
-          className="text-brand-complementary underline text-sm"
-        >
-          Go to Dashboard
-        </button>
-      </div>
+      <Shell>
+        <div className="bg-white border border-brand-complementary/12 rounded-2xl p-7 text-center">
+          <p className="text-red-500 text-sm mb-4">
+            This queue link is invalid or no longer exists.
+          </p>
+          <button
+            onClick={() => router.push("/dashboard")}
+            className="text-[12px] text-brand-complementary/50 underline hover:text-brand-complementary"
+          >
+            Go to Dashboard
+          </button>
+        </div>
+      </Shell>
     );
 
   if (!queueInfo)
     return (
-      <div className="min-h-screen bg-brand-main flex items-center justify-center">
-        <p className="text-brand-complementary">Loading...</p>
-      </div>
+      <Shell>
+        <p className="text-center text-brand-complementary/40 text-sm">
+          Loading...
+        </p>
+      </Shell>
     );
 
   const ahead = queueNumber ? queueNumber - queueInfo.current : 0;
 
   return (
-    <div className="min-h-screen bg-brand-main flex flex-col items-center justify-center p-5">
-      <div className="max-w-sm w-full">
-        <h1 className="text-2xl font-bold text-brand-complementary mb-1">
+    <Shell>
+      {/* Queue label */}
+      <div className="mb-5 px-1">
+        <p className="text-[10px] font-bold uppercase tracking-widest text-brand-complementary/40 mb-1">
+          Queue
+        </p>
+        <h1 className="text-2xl font-extrabold text-brand-complementary">
           {queueInfo.name}
         </h1>
-        <p className="text-brand-complementary/50 mb-8 text-sm">
+        <p className="text-[12px] text-brand-complementary/50 mt-1">
           Now serving:{" "}
-          <strong>{queueInfo.current === 0 ? "—" : queueInfo.current}</strong>
+          <strong className="text-brand-complementary font-extrabold">
+            {queueInfo.current === 0 ? "—" : queueInfo.current}
+          </strong>
         </p>
-
-        {queueNumber ? (
-          <div className="bg-white border border-brand-complementary/20 rounded-xl p-8 text-center shadow-sm">
-            <p className="text-brand-complementary/50 mb-2 text-sm uppercase tracking-widest">
-              Your number
-            </p>
-            <p className="text-8xl font-bold text-brand-complementary">
-              {queueNumber}
-            </p>
-            <p className="mt-5 text-sm">
-              {ahead > 0 ? (
-                <span className="text-brand-tertiary font-medium">
-                  {ahead} people ahead of you
-                </span>
-              ) : (
-                <span className="text-green-700 font-semibold">
-                  You're up next!
-                </span>
-              )}
-            </p>
-            {alreadyJoined && (
-              <p className="text-xs text-brand-complementary/30 mt-2">
-                Already joined
-              </p>
-            )}
-            <button
-              onClick={() => router.push("/dashboard")}
-              className="mt-6 text-sm text-brand-complementary/50 underline"
-            >
-              Back to Dashboard
-            </button>
-          </div>
-        ) : (
-          <div className="bg-white border border-brand-complementary/20 rounded-xl p-6 shadow-sm">
-            <p className="text-sm text-brand-complementary/60 mb-5">
-              Joining as <strong>{user.displayName}</strong>
-            </p>
-            <button
-              onClick={joinQueue}
-              disabled={joining}
-              className="w-full bg-brand-complementary text-brand-main py-3 rounded-lg font-semibold
-                hover:opacity-90 transition-opacity disabled:opacity-40 disabled:cursor-not-allowed"
-            >
-              {joining ? "Joining..." : "Join Queue"}
-            </button>
-          </div>
-        )}
       </div>
-    </div>
+
+      {queueNumber ? (
+        <div className="bg-white border border-brand-complementary/12 rounded-2xl p-8 text-center">
+          <p className="text-[10px] font-bold uppercase tracking-widest text-brand-complementary/40 mb-5">
+            Your number
+          </p>
+          <p className="text-[100px] font-black text-brand-complementary leading-none tracking-tight mb-5">
+            {queueNumber}
+          </p>
+          <div
+            className={`inline-block px-4 py-1.5 rounded-full text-[12px] font-bold mb-6 ${
+              ahead <= 0
+                ? "bg-green-100 text-green-700"
+                : "bg-brand-secondary text-brand-complementary"
+            }`}
+          >
+            {ahead <= 0
+              ? "You're up next!"
+              : `${ahead} ${ahead === 1 ? "person" : "people"} ahead of you`}
+          </div>
+          {alreadyJoined && (
+            <p className="text-[11px] text-brand-complementary/30 mb-4">
+              You already joined this queue
+            </p>
+          )}
+          <button
+            onClick={() => router.push("/dashboard")}
+            className="block mx-auto text-[12px] text-brand-complementary/40 underline hover:text-brand-complementary transition-colors"
+          >
+            Back to Dashboard
+          </button>
+        </div>
+      ) : (
+        <div className="bg-white border border-brand-complementary/12 rounded-2xl p-6">
+          <p className="text-[12px] text-brand-complementary/50 mb-5">
+            Joining as{" "}
+            <strong className="text-brand-complementary">
+              {user.displayName}
+            </strong>
+          </p>
+          <button
+            onClick={joinQueue}
+            disabled={joining}
+            className="w-full bg-brand-complementary text-brand-main font-bold text-[14px]
+              py-3.5 rounded-xl hover:opacity-90 active:scale-[.98] transition-all
+              disabled:opacity-40 disabled:cursor-not-allowed"
+          >
+            {joining ? "Joining..." : "Join Queue"}
+          </button>
+        </div>
+      )}
+    </Shell>
   );
 }

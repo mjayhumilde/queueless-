@@ -13,27 +13,64 @@ export default function HomePage() {
 
   if (loading)
     return (
-      <div className="min-h-screen flex items-center justify-center bg-brand-main">
-        <p className="text-brand-complementary">Loading...</p>
+      <div className="min-h-screen bg-brand-main flex items-center justify-center">
+        <p className="text-brand-complementary/40 text-sm">Loading...</p>
       </div>
     );
 
   return (
-    <div className="min-h-screen bg-brand-main flex flex-col items-center justify-center gap-6 p-5">
-      <h1 className="text-5xl font-bold text-brand-complementary tracking-tight">
-        Queueless
-      </h1>
-      <p className="text-brand-complementary/70 text-center max-w-sm leading-relaxed">
-        Create and manage queues, or join one with a link. No more waiting in
-        the dark.
-      </p>
-      <button
-        onClick={loginWithGoogle}
-        className="bg-brand-complementary text-brand-main px-8 py-3 rounded-lg font-semibold
-          hover:opacity-90 transition-opacity mt-2"
-      >
-        Sign in with Google
-      </button>
+    <div className="min-h-screen bg-brand-main flex flex-col items-center justify-center px-6 py-12">
+      <div className="w-full max-w-sm flex flex-col items-center text-center gap-5">
+        {/* Badge */}
+        <div className="flex items-center gap-1.5 bg-brand-complementary/6 border border-brand-complementary/12 rounded-full px-3 py-1">
+          <div className="w-1.5 h-1.5 rounded-full bg-brand-tertiary" />
+          <span className="text-[10px] font-bold tracking-widest text-brand-complementary/50 uppercase">
+            Pre-Alpha
+          </span>
+        </div>
+
+        {/* Title */}
+        <h1 className="text-5xl sm:text-6xl font-black text-brand-complementary tracking-tight leading-none">
+          Queue<span className="text-brand-tertiary">Less</span>
+        </h1>
+
+        {/* Subtitle */}
+        <p className="text-[13px] text-brand-complementary/55 leading-relaxed max-w-65">
+          Skip the confusion. Create a queue, share a link, and let everyone
+          know their spot — in real time.
+        </p>
+
+        {/* Auth card */}
+        <div className="w-full bg-white border border-brand-complementary/12 rounded-2xl p-6 mt-2">
+          <p className="text-[10px] font-bold uppercase tracking-widest text-brand-complementary/40 mb-4">
+            Get started
+          </p>
+          <button
+            onClick={loginWithGoogle}
+            className="w-full flex items-center justify-center gap-3 bg-brand-complementary
+              text-brand-main font-bold text-[14px] py-3.5 rounded-xl hover:cursor-pointer
+              hover:opacity-90 active:scale-[.98] transition-all"
+          >
+            <div
+              className="w-5 h-5 rounded-full bg-white flex items-center justify-center
+              text-[10px] font-black text-brand-complementary"
+            >
+              G
+            </div>
+            Continue with Google
+          </button>
+          <div className="flex items-center gap-3 my-4">
+            <div className="flex-1 h-px bg-brand-complementary/10" />
+            <span className="text-[10px] text-brand-complementary/30">
+              free to use
+            </span>
+            <div className="flex-1 h-px bg-brand-complementary/10" />
+          </div>
+          <p className="text-[11px] text-brand-complementary/30 text-center">
+            *for testing, no subscriptions for now*
+          </p>
+        </div>
+      </div>
     </div>
   );
 }

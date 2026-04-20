@@ -15,34 +15,28 @@ export default function JoinForm({ user }: { user: User }) {
     setError("");
     setSuccess("");
     if (!joinLink.trim()) return;
-
     let queueId = joinLink.trim();
     try {
       const url = new URL(joinLink.trim());
       queueId = url.searchParams.get("queueId") ?? "";
-    } catch {
-      /* raw ID */
-    }
+    } catch {}
 
     if (!queueId) {
       setError("Invalid link or queue ID.");
       return;
     }
-
     const snap = await get(ref(db, `queues/${queueId}`));
     if (!snap.exists()) {
       setError("Queue not found.");
       return;
     }
-
-    const alreadySnap = await get(
+    const already = await get(
       ref(db, `users/${user.uid}/joinedQueues/${queueId}`),
     );
-    if (alreadySnap.exists()) {
+    if (already.exists()) {
       setError("You already joined this queue.");
       return;
     }
-
     const queueData = snap.val();
     if (queueData.ownerId === user.uid) {
       setError("You can't join your own queue.");
@@ -51,12 +45,11 @@ export default function JoinForm({ user }: { user: User }) {
 
     let assignedNumber = 0;
     await runTransaction(ref(db, `queues/${queueId}/list`), (list) => {
-      const entries = Object.values(list ?? {}) as any[];
-      const maxNumber = entries.reduce(
-        (max, item) => Math.max(max, item.number ?? 0),
+      const max = Object.values(list ?? {}).reduce(
+        (m: number, i: any) => Math.max(m, i.number ?? 0),
         0,
       );
-      assignedNumber = maxNumber + 1;
+      assignedNumber = (max as number) + 1;
       return list;
     });
 
@@ -68,7 +61,6 @@ export default function JoinForm({ user }: { user: User }) {
       status: "waiting",
       joinedAt: Date.now(),
     });
-
     await set(
       ref(db, `users/${user.uid}/joinedQueues/${queueId}`),
       assignedNumber,
@@ -90,12 +82,18 @@ export default function JoinForm({ user }: { user: User }) {
           placeholder="Paste join link or queue ID"
           onEnter={joinViaLink}
         />
-        <Button onClick={joinViaLink} variant="success">
+        <Button onClick={joinViaLink} variant="primary">
           Join
         </Button>
       </div>
-      {error && <p className="text-red-600 text-sm mt-1">{error}</p>}
-      {success && <p className="text-green-700 text-sm mt-1">{success}</p>}
+      {error && (
+        <p className="text-red-600 text-[11px] mt-1.5 font-medium">{error}</p>
+      )}
+      {success && (
+        <p className="text-green-700 text-[11px] mt-1.5 font-medium">
+          {success}
+        </p>
+      )}
     </div>
   );
 }

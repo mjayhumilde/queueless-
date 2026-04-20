@@ -32,7 +32,9 @@ export default function CreateForm({ user }: { user: User }) {
         placeholder="Queue name"
         onEnter={createQueue}
       />
-      <Button onClick={createQueue}>Create</Button>
+      <Button onClick={createQueue} variant="success">
+        Create
+      </Button>
     </div>
   );
 }
