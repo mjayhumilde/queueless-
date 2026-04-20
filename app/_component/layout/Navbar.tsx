@@ -19,8 +19,9 @@ export default function Navbar() {
     <nav className="bg-brand-complementary px-4 sm:px-6 py-3 flex justify-between items-center sticky top-0 z-50">
       <button
         onClick={() => router.push("/dashboard")}
-        className="text-base sm:text-lg font-extrabold text-brand-main tracking-tight"
+        className="text-base sm:text-lg font-extrabold text-brand-main tracking-tight flex hover:cursor-pointer"
       >
+        <img className="w-14" src="/queuelessLogo.png" alt="logo" />
         Queue<span className="text-brand-tertiary">Less</span>
       </button>
       <div className="flex items-center gap-3">
@@ -35,7 +36,7 @@ export default function Navbar() {
         </span>
         <button
           onClick={logout}
-          className="text-[11px] text-brand-secondary/60 hover:text-brand-secondary underline transition-colors"
+          className="text-[11px] text-brand-secondary/60 hover:text-brand-secondary underline transition-colors hover:cursor-pointer"
         >
           Sign out
         </button>

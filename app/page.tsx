@@ -25,9 +25,12 @@ export default function HomePage() {
         <div className="flex items-center gap-1.5 bg-brand-complementary/6 border border-brand-complementary/12 rounded-full px-3 py-1">
           <div className="w-1.5 h-1.5 rounded-full bg-brand-tertiary" />
           <span className="text-[10px] font-bold tracking-widest text-brand-complementary/50 uppercase">
-            Pre-Alpha
+            ALPHA PHASE TESTING
           </span>
         </div>
+
+        {/* Logo */}
+        <img className="w-44" src="/queuelessLogo.png" alt="logo" />
 
         {/* Title */}
         <h1 className="text-5xl sm:text-6xl font-black text-brand-complementary tracking-tight leading-none">
