@@ -32,12 +32,7 @@ export default function HomePage() {
         </div>
 
         {/* Logo */}
-        <Image
-          src="/queuelessLogo.png"
-          alt="QueueLess"
-          width={190}
-          height={50}
-        />
+        <Image src="/queueLessLogo.png" alt="logo" width={190} height={50} />
 
         {/* Title */}
         <h1 className="text-5xl sm:text-6xl font-black text-brand-complementary tracking-tight leading-none">

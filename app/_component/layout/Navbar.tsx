@@ -23,7 +23,7 @@ export default function Navbar() {
         onClick={() => router.push("/dashboard")}
         className="text-base sm:text-lg font-extrabold text-brand-main tracking-tight flex hover:cursor-pointer"
       >
-        <Image src="/queuelessLogo.png" alt="QueueLess" width={60} height={9} />
+        <Image src="/queueLessLogo.png" alt="logo" width={60} height={9} />
         Queue<span className="text-brand-tertiary">Less</span>
       </button>
       <div className="flex items-center gap-3">
