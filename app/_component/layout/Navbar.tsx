@@ -2,6 +2,8 @@
 import { useAuth } from "@/context/authContext";
 import { useRouter } from "next/navigation";
 
+import Image from "next/image";
+
 export default function Navbar() {
   const { user, logout } = useAuth();
   const router = useRouter();
@@ -21,7 +23,7 @@ export default function Navbar() {
         onClick={() => router.push("/dashboard")}
         className="text-base sm:text-lg font-extrabold text-brand-main tracking-tight flex hover:cursor-pointer"
       >
-        <img className="w-14" src="/queuelessLogo.png" alt="logo" />
+        <Image src="/queuelessLogo.png" alt="QueueLess" width={60} height={9} />
         Queue<span className="text-brand-tertiary">Less</span>
       </button>
       <div className="flex items-center gap-3">

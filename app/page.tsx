@@ -3,6 +3,8 @@ import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/authContext";
 
+import Image from "next/image";
+
 export default function HomePage() {
   const { user, loading, loginWithGoogle } = useAuth();
   const router = useRouter();
@@ -30,7 +32,12 @@ export default function HomePage() {
         </div>
 
         {/* Logo */}
-        <img className="w-44" src="/queuelessLogo.png" alt="logo" />
+        <Image
+          src="/queuelessLogo.png"
+          alt="QueueLess"
+          width={190}
+          height={50}
+        />
 
         {/* Title */}
         <h1 className="text-5xl sm:text-6xl font-black text-brand-complementary tracking-tight leading-none">
