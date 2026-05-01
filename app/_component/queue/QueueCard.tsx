@@ -1,6 +1,7 @@
 "use client";
-import { db } from "@/lib/firebase";
 import { ref, get, update, remove, set } from "firebase/database";
+import { db } from "@/lib/firebase";
+import { DB_PATHS, QUEUE_STATUS } from "@/lib/constants";
 import Button from "../ui/Button";
 
 type Props = { queueId: string; queue: any };
@@ -14,9 +15,9 @@ export default function QueueCard({ queueId, queue }: Props) {
   const hasWaiting = waitingCount > 0;
   const nextNumber = hasWaiting ? waitingList[0].number : null;
 
-  const callNext = async () => {
+  const advanceQueue = async (status: string) => {
     if (!hasWaiting) return;
-    const queueRef = ref(db, `queues/${queueId}`);
+    const queueRef = ref(db, DB_PATHS.queue(queueId));
     const snap = await get(queueRef);
     if (!snap.exists()) return;
     const data = snap.val();
@@ -24,31 +25,22 @@ export default function QueueCard({ queueId, queue }: Props) {
       ([, v]: any) => v.number === data.current,
     );
     if (entry)
-      await update(ref(db, `queues/${queueId}/list/${entry[0]}`), {
-        status: "done",
+      await update(ref(db, `${DB_PATHS.queueList(queueId)}/${entry[0]}`), {
+        status,
       });
     await update(queueRef, { current: nextNumber });
   };
 
+  const callNext = () => advanceQueue(QUEUE_STATUS.DONE);
+
   const skipCurrent = async () => {
-    if (!hasWaiting || !confirm("Skip current person?")) return;
-    const queueRef = ref(db, `queues/${queueId}`);
-    const snap = await get(queueRef);
-    if (!snap.exists()) return;
-    const data = snap.val();
-    const entry = Object.entries(data.list ?? {}).find(
-      ([, v]: any) => v.number === data.current,
-    );
-    if (entry)
-      await update(ref(db, `queues/${queueId}/list/${entry[0]}`), {
-        status: "skipped",
-      });
-    await update(queueRef, { current: nextNumber });
+    if (!confirm("Skip current person?")) return;
+    advanceQueue(QUEUE_STATUS.SKIPPED);
   };
 
   const deleteQueue = async () => {
     if (!confirm("Delete this queue?")) return;
-    await remove(ref(db, `queues/${queueId}`));
+    await remove(ref(db, DB_PATHS.queue(queueId)));
   };
 
   const resetQueue = async () => {
@@ -56,26 +48,19 @@ export default function QueueCard({ queueId, queue }: Props) {
       !confirm("Reset queue? Clears all entries and removes all joined users.")
     )
       return;
-
-    const queueRef = ref(db, `queues/${queueId}`);
-
-    // Get current list to find all uids who joined
-    const snap = await get(queueRef);
+    const snap = await get(ref(db, DB_PATHS.queue(queueId)));
     if (!snap.exists()) return;
-    const data = snap.val();
-    const list = data.list ?? {};
+    const list = snap.val().list ?? {};
 
-    // Remove this queue from each joined user's record
-    const removePromises = Object.values(list).map((entry: any) => {
-      if (entry.uid) {
-        return remove(ref(db, `users/${entry.uid}/joinedQueues/${queueId}`));
-      }
-      return Promise.resolve();
-    });
-    await Promise.all(removePromises);
+    await Promise.all(
+      Object.values(list)
+        .filter((entry: any) => entry.uid)
+        .map((entry: any) =>
+          remove(ref(db, DB_PATHS.userJoinedQueue(entry.uid, queueId))),
+        ),
+    );
 
-    // Reset the queue itself
-    await set(queueRef, {
+    await set(ref(db, DB_PATHS.queue(queueId)), {
       name: queue.name,
       ownerId: queue.ownerId,
       ownerName: queue.ownerName,

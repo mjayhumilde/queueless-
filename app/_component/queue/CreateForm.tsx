@@ -1,8 +1,9 @@
 "use client";
 import { useState } from "react";
-import { db } from "@/lib/firebase";
 import { ref, set, push } from "firebase/database";
 import { User } from "firebase/auth";
+import { db } from "@/lib/firebase";
+import { DB_PATHS, QUEUE_STATUS } from "@/lib/constants";
 import Input from "../ui/input";
 import Button from "../ui/Button";
 
@@ -11,7 +12,7 @@ export default function CreateForm({ user }: { user: User }) {
 
   const createQueue = async () => {
     if (!queueName.trim()) return;
-    const newRef = push(ref(db, "queues"));
+    const newRef = push(ref(db, DB_PATHS.queues));
     await set(newRef, {
       name: queueName,
       ownerId: user.uid,

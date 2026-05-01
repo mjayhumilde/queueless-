@@ -1,15 +1,10 @@
 "use client";
 import { useState, useEffect } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
+import { ref, onValue } from "firebase/database";
 import { db } from "@/lib/firebase";
-import {
-  ref,
-  get,
-  push,
-  set,
-  onValue,
-  runTransaction,
-} from "firebase/database";
+import { joinQueue } from "@/lib/queueService";
+import { ROUTES } from "@/lib/constants";
 import { useAuth } from "@/context/authContext";
 
 export default function JoinPage() {
@@ -22,6 +17,7 @@ export default function JoinPage() {
   const [notFound, setNotFound] = useState(false);
   const [alreadyJoined, setAlreadyJoined] = useState(false);
   const [joining, setJoining] = useState(false);
+  const [error, setError] = useState("");
 
   useEffect(() => {
     if (!queueId) return;
@@ -36,59 +32,30 @@ export default function JoinPage() {
 
   useEffect(() => {
     if (!user || !queueId) return;
-    get(ref(db, `users/${user.uid}/joinedQueues/${queueId}`)).then((snap) => {
-      if (snap.exists()) {
-        setQueueNumber(snap.val());
-        setAlreadyJoined(true);
-      }
+    // Check if already joined via queueService result path
+    import("firebase/database").then(({ get, ref: fbRef }) => {
+      get(fbRef(db, `users/${user.uid}/joinedQueues/${queueId}`)).then(
+        (snap) => {
+          if (snap.exists()) {
+            setQueueNumber(snap.val());
+            setAlreadyJoined(true);
+          }
+        },
+      );
     });
   }, [user, queueId]);
 
-  const joinQueue = async () => {
+  const handleJoin = async () => {
     if (!user || !queueId || joining) return;
     setJoining(true);
+    setError("");
     try {
-      const qSnap = await get(ref(db, `queues/${queueId}`));
-      if (!qSnap.exists()) {
-        alert("Queue not found!");
+      const result = await joinQueue(queueId, user.uid, user.displayName ?? "");
+      if (!result.success) {
+        setError(result.error ?? "Failed to join.");
         return;
       }
-      if (qSnap.val().ownerId === user.uid) {
-        alert("You can't join your own queue.");
-        return;
-      }
-      const already = await get(
-        ref(db, `users/${user.uid}/joinedQueues/${queueId}`),
-      );
-      if (already.exists()) {
-        setQueueNumber(already.val());
-        setAlreadyJoined(true);
-        return;
-      }
-
-      let assignedNumber = 0;
-      await runTransaction(ref(db, `queues/${queueId}/list`), (list) => {
-        const max = Object.values(list ?? {}).reduce(
-          (m: number, i: any) => Math.max(m, i.number ?? 0),
-          0,
-        );
-        assignedNumber = (max as number) + 1;
-        return list;
-      });
-
-      const entryRef = push(ref(db, `queues/${queueId}/list`));
-      await set(entryRef, {
-        name: user.displayName,
-        uid: user.uid,
-        number: assignedNumber,
-        status: "waiting",
-        joinedAt: Date.now(),
-      });
-      await set(
-        ref(db, `users/${user.uid}/joinedQueues/${queueId}`),
-        assignedNumber,
-      );
-      setQueueNumber(assignedNumber);
+      setQueueNumber(result.number ?? null);
     } finally {
       setJoining(false);
     }
@@ -125,7 +92,7 @@ export default function JoinPage() {
           <button
             onClick={loginWithGoogle}
             className="w-full flex items-center justify-center gap-3 bg-brand-complementary
-            text-brand-main font-bold text-[13px] py-3.5 rounded-xl hover:opacity-90 transition-all"
+          text-brand-main font-bold text-[13px] py-3.5 rounded-xl hover:opacity-90 transition-all"
           >
             <div className="w-5 h-5 rounded-full bg-white flex items-center justify-center text-[10px] font-black text-brand-complementary">
               G
@@ -144,7 +111,7 @@ export default function JoinPage() {
             This queue link is invalid or no longer exists.
           </p>
           <button
-            onClick={() => router.push("/dashboard")}
+            onClick={() => router.push(ROUTES.DASHBOARD)}
             className="text-[12px] text-brand-complementary/50 underline hover:text-brand-complementary"
           >
             Go to Dashboard
@@ -207,7 +174,7 @@ export default function JoinPage() {
             </p>
           )}
           <button
-            onClick={() => router.push("/dashboard")}
+            onClick={() => router.push(ROUTES.DASHBOARD)}
             className="block mx-auto text-[12px] text-brand-complementary/40 underline hover:text-brand-complementary transition-colors"
           >
             Back to Dashboard
@@ -221,8 +188,11 @@ export default function JoinPage() {
               {user.displayName}
             </strong>
           </p>
+          {error && (
+            <p className="text-red-600 text-[11px] mb-3 font-medium">{error}</p>
+          )}
           <button
-            onClick={joinQueue}
+            onClick={handleJoin}
             disabled={joining}
             className="w-full bg-brand-complementary text-brand-main font-bold text-[14px]
               py-3.5 rounded-xl hover:opacity-90 active:scale-[.98] transition-all

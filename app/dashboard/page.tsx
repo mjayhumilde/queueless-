@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/authContext";
 import { useMyQueues } from "../_hooks/useMyQueues";
 import { useJoinedQueues } from "../_hooks/useJoinedQueues";
+import { ROUTES } from "@/lib/constants";
 import CreateForm from "../_component/queue/CreateForm";
 import JoinForm from "../_component/queue/JoinForm";
 import QueueCard from "../_component/queue/QueueCard";
@@ -54,7 +55,7 @@ export default function DashboardPage() {
   const joinedQueues = useJoinedQueues(user);
 
   useEffect(() => {
-    if (!loading && !user) router.push("/");
+    if (!loading && !user) router.push(ROUTES.HOME);
   }, [user, loading]);
 
   if (loading || !user)
