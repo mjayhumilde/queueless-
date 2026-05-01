@@ -52,8 +52,30 @@ export default function QueueCard({ queueId, queue }: Props) {
   };
 
   const resetQueue = async () => {
-    if (!confirm("Reset queue? Clears all entries.")) return;
-    await set(ref(db, `queues/${queueId}`), {
+    if (
+      !confirm("Reset queue? Clears all entries and removes all joined users.")
+    )
+      return;
+
+    const queueRef = ref(db, `queues/${queueId}`);
+
+    // Get current list to find all uids who joined
+    const snap = await get(queueRef);
+    if (!snap.exists()) return;
+    const data = snap.val();
+    const list = data.list ?? {};
+
+    // Remove this queue from each joined user's record
+    const removePromises = Object.values(list).map((entry: any) => {
+      if (entry.uid) {
+        return remove(ref(db, `users/${entry.uid}/joinedQueues/${queueId}`));
+      }
+      return Promise.resolve();
+    });
+    await Promise.all(removePromises);
+
+    // Reset the queue itself
+    await set(queueRef, {
       name: queue.name,
       ownerId: queue.ownerId,
       ownerName: queue.ownerName,
