@@ -2,87 +2,72 @@
   <img src="public/queueLessLogo.png" alt="QueueLess logo" width="160" />
 </p>
 
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+<h1 align="center">QueueLess</h1>
 
-## Getting Started
+QueueLess helps you manage queues online. Create a queue, share a link, and let
+participants track their number in real time.
 
-First, run the development server:
+**Currently in alpha, with sandbox payments for testing.**
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+## Features
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+- Sign in with Google.
+- Create queues and share join links.
+- Join a queue using a link or queue ID.
+- Call the next participant, skip, reset, or delete a queue.
+- Display the current and next numbers on a live monitor.
+- Test Business and Pro upgrades through PayMongo GCash checkout.
+
+## Tech stack
+
+Next.js, React, TypeScript, Tailwind CSS, Firebase Authentication,
+Firebase Realtime Database, and PayMongo.
+
+## Getting started
+
+Requires Node.js 20.9 or newer, npm, and a Firebase project.
+
+1. Install dependencies:
+
+   ```bash
+   npm ci
+   ```
+
+2. Copy [.env.example](.env.example) to `.env.local` and fill in your Firebase
+   settings. For payment testing, also configure `FIREBASE_DB_SECRET` and a
+   PayMongo `sk_test_` secret key. Keep `.env.local` out of version control.
+
+3. Enable Google sign-in in Firebase Authentication, add `localhost` to its
+   authorized domains, and configure your Realtime Database access rules.
+
+4. Start the app:
+
+   ```bash
+   npm run dev
+   ```
+
+Open [localhost:3000](http://localhost:3000). Restart the server after changing
+environment variables.
 
 ## Sandbox payments
 
-Copy `.env.example` to `.env.local` and fill in the Firebase project settings and
-PayMongo test credentials. Restart the dev server after changing environment
-variables. The Realtime Database URL is named
-`NEXT_PUBLIC_FIRE_BASE_DATABASE_URL` in both the client and payment server.
-`FIREBASE_DB_SECRET` must authorize server reads and writes to that database;
-keep it and both PayMongo secrets server-only.
+Open `/pricing`, choose Business or Pro, and complete the GCash test checkout.
+Return using the same browser and account to verify the payment and apply the
+plan. Each purchase grants 30 days of access; automatic renewal is not enabled.
 
-To test, sign in, open `/pricing`, select Business or Pro, and complete the
-GCash sandbox checkout. Return to QueueLess in the same browser. The success
-page checks the saved checkout session with PayMongo and applies the plan only
-after confirming a paid PHP payment for the signed-in account and selected
-price. Navbar and pricing listen for the saved plan automatically. If activation
-fails, the page displays the error and lets you retry without buying again.
+For webhook testing, register `checkout_session.payment.paid` at
+`/api/paymongo/webhook` using a public HTTPS URL and configure
+`PAYMONGO_WEBHOOK_SECRET`. Local return-page verification works without a tunnel.
 
-This return flow works on localhost without a webhook tunnel. Redirect URLs use
-the origin that started checkout, so a local purchase returns to the local app.
-Each checkout has its own return reference and a cookie lasting 24 hours, so
-checkouts in different tabs do not overwrite one another. Start a fresh sandbox
-checkout after updating from the old integration, since older checkouts did not
-save this cookie.
+Firebase rules must protect plan fields from client writes before live payments
+are enabled.
 
-For activation even when the customer closes the checkout tab, register and
-enable a PayMongo webhook for `checkout_session.payment.paid` at
-`https://<your-public-host>/api/paymongo/webhook`. Use a public HTTPS tunnel to
-test webhook delivery locally; PayMongo cannot call localhost directly. Set
-`PAYMONGO_WEBHOOK_SECRET` to that endpoint's signing secret. A disabled webhook
-or a webhook pointing at another deployment will not update the local handler.
-The handler verifies the test/live signature and returns a failure response if
-the plan cannot be saved, allowing delivery retries.
+## Commands
 
-Each purchase grants 30 days from PayMongo's payment timestamp. Refreshing the
-success page or receiving the same webhook again does not extend that period.
-These are one-time checkout payments; automatic monthly renewal is not configured.
-
-Before accepting live payments, restrict Firebase client writes to the payment
-fields (`plan`, `planExpiry`, `planPaidAt`, and `paymongoPaymentId`). An owner-wide
-write rule at `users/$uid` also grants writes to these children; a child-level
-deny does not override that grant. This repository does not deploy database rules.
-
-Run payment regression checks with `npm test`. The checks mock PayMongo/Firebase
-and do not charge a payment or change a real account.
-
-API references: [PayMongo checkout sessions](https://docs.paymongo.com/reference/checkout-session-resource),
-[webhook signatures](https://docs.paymongo.com/docs/developer-tools-webhook-setup-management),
-and [Firebase conditional writes](https://firebase.google.com/docs/database/rest/save-data#section-conditional-requests).
-
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
-
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+```bash
+npm run dev         # Development server
+npm run build       # Production build
+npm start           # Run the production build
+npm run lint        # Lint
+npx tsc --noEmit    # Type check
+```
