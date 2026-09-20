@@ -9,6 +9,7 @@ import {
 } from "firebase/database";
 import { db } from "@/lib/firebase";
 import { DB_PATHS, QUEUE_STATUS } from "@/lib/constants";
+import { canJoinQueue } from "@/lib/subscriptionService";
 
 export async function joinQueue(
   queueId: string,
@@ -25,6 +26,10 @@ export async function joinQueue(
   const already = await get(ref(db, DB_PATHS.userJoinedQueue(uid, queueId)));
   if (already.exists())
     return { success: false, error: "You already joined this queue." };
+
+  const memberCount = Object.keys(queueData.list ?? {}).length;
+  const limitCheck = await canJoinQueue(memberCount, queueData.ownerId);
+  if (!limitCheck.allowed) return { success: false, error: limitCheck.reason };
 
   let assignedNumber = 0;
   await runTransaction(ref(db, DB_PATHS.queueList(queueId)), (list) => {

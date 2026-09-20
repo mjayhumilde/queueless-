@@ -56,7 +56,7 @@ export default function DashboardPage() {
 
   useEffect(() => {
     if (!loading && !user) router.push(ROUTES.HOME);
-  }, [user, loading]);
+  }, [user, loading, router]);
 
   if (loading || !user)
     return (
@@ -108,7 +108,12 @@ export default function DashboardPage() {
             </SectionIcon>
           }
         >
-          <CreateForm user={user} />
+          <CreateForm
+            user={user}
+            queueCount={
+              Object.values(myQueues).filter((queue) => queue.isActive).length
+            }
+          />
         </Section>
 
         <Section
@@ -172,7 +177,7 @@ export default function DashboardPage() {
         >
           {Object.keys(joinedQueues).length === 0 ? (
             <p className="text-[13px] text-brand-complementary/35 py-2">
-              You haven't joined any queues yet.
+              You haven&apos;t joined any queues yet.
             </p>
           ) : (
             Object.entries(joinedQueues).map(([queueId, queue]) => (

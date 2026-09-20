@@ -1,12 +1,16 @@
 "use client";
 import { useAuth } from "@/context/authContext";
 import { useRouter } from "next/navigation";
-
+import { useUserPlan } from "@/app/_hooks/useUserPlan";
+import { PLANS } from "@/lib/constants";
 import Image from "next/image";
 
 export default function Navbar() {
   const { user, logout } = useAuth();
   const router = useRouter();
+  const { plan, loading: planLoading, error: planError } = useUserPlan(user);
+
+  // early return AFTER all hooks
   if (!user) return null;
 
   const initials =
@@ -27,6 +31,14 @@ export default function Navbar() {
         Queue<span className="text-brand-tertiary">Less</span>
       </button>
       <div className="flex items-center gap-3">
+        {!planLoading && !planError && plan !== PLANS.PRO && (
+          <button
+            onClick={() => router.push("/pricing")}
+            className="text-[11px] font-bold text-brand-tertiary hover:opacity-80 transition-opacity"
+          >
+            {plan === PLANS.FREE ? "Upgrade" : "Manage plan"}
+          </button>
+        )}
         <div
           className="w-8 h-8 rounded-full bg-brand-tertiary border-2 border-white/20
           flex items-center justify-center text-[11px] font-extrabold text-brand-complementary"
